@@ -164,9 +164,9 @@ class HomeController extends GetxController {
     getName();
   }
   getName() {
-    name.value = userData['NAME']
-        .toString()
-        .substring(0, userData['NAME'].toString().indexOf(' '));
+    final fullName = userData['NAME'].toString().trim();
+    final spaceIndex = fullName.indexOf(' ');
+    name.value = spaceIndex >= 0 ? fullName.substring(0, spaceIndex) : fullName;
   }
   removeFromList(int index) {
     db
