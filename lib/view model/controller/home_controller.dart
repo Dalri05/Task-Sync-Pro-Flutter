@@ -3,10 +3,14 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:to_do_app/Data/network/firebase/firebase_services.dart';
+import 'package:to_do_app/data/notifications/notification_service.dart';
 import 'package:to_do_app/Data/shared%20pref/shared_pref.dart';
 import 'package:to_do_app/utils/utils.dart';
 import 'package:to_do_app/view%20model/DbHelper/db_helper.dart';
+import 'package:to_do_app/view/home%20page/components/progress_update_sheet.dart';
+import '../../model/task_filter.dart';
 import '../../model/task_model.dart';
+import '../../model/task_stats.dart';
 
 class HomeController extends GetxController {
   RxMap userData = {}.obs;
@@ -19,6 +23,11 @@ class HomeController extends GetxController {
   RxList list = [].obs;
   Connectivity? connectivity;
   final searchController = TextEditingController().obs;
+  // filtros da home: prioridade (All/High/Medium/Low) e status (All/Pending/Completed)
+  RxString priorityFilter = 'All'.obs;
+  RxString statusFilter = 'All'.obs;
+  // espelho reativo do texto de busca (TextEditingController não é reativo p/ Obx)
+  RxString searchQuery = ''.obs;
   HomeController() {
     // if name not loaded
     if (userData['NAME'] == null) {
@@ -27,7 +36,7 @@ class HomeController extends GetxController {
     // check for set listeners only for one time
     if (connectivity == null) {
       String str = FirebaseService.auth.currentUser!.email.toString();
-      String node = str.substring(0, str.indexOf('@'));
+      String node = FirebaseService.nodeFromEmail(str);
       // listener for changing live database
       FirebaseDatabase.instance
           .ref('Tasks')
@@ -129,9 +138,41 @@ class HomeController extends GetxController {
     }
   }
   popupMenuSelected(int value, int index, BuildContext context) async {
-    if (value == 2) {
+    if (value == 1) {
+      showProgressSheet(index);
+    } else if (value == 2) {
       Utils.showWarningDailog(context, () => removeFromList(index));
     }
+  }
+  showProgressSheet(int index) {
+    ProgressUpdateSheet.show(
+        initialProgress: TaskStats.parseProgress(list[index].progress),
+        onSave: (progress) => updateProgress(index, progress));
+  }
+  updateProgress(int index, int progress) async {
+    final task = list[index];
+    final String status =
+        progress >= kCompleteProgress ? 'complete' : 'unComplete';
+    await db.update(TaskModel(
+        key: task.key,
+        status: status,
+        progress: progress.toString(),
+        time: task.time,
+        date: task.date,
+        periority: task.periority,
+        description: task.description,
+        category: task.category,
+        title: task.title,
+        image: task.image,
+        show: task.show));
+    // offline first: local sempre grava, o Firebase só quando há conexão
+    var connection = await Connectivity().checkConnectivity();
+    if (connection == ConnectivityResult.wifi ||
+        connection == ConnectivityResult.mobile) {
+      await FirebaseService.update(task.key!, 'progress', progress.toString());
+      await FirebaseService.update(task.key!, 'status', status);
+    }
+    getTaskData();
   }
   getTaskData() async {
     list.value = await db.getData();
@@ -144,8 +185,23 @@ class HomeController extends GetxController {
   Future<List<TaskModel>> getFututeData() {
     return db.getData();
   }
+  /// Lista que a UI consome: busca + prioridade + status sobre `list`.
+  /// Lida dentro de Obx, reage a list/searchQuery/priorityFilter/statusFilter.
+  List<TaskModel> get filteredTasks => TaskFilter.apply(
+        list,
+        query: searchQuery.value,
+        priority: priorityFilter.value,
+        status: statusFilter.value,
+      );
+  setPriorityFilter(String value) {
+    priorityFilter.value = value;
+  }
+  setStatusFilter(String value) {
+    statusFilter.value = value;
+  }
   onClear(BuildContext context) {
     searchController.value.text = '';
+    searchQuery.value = '';
     hasText.value = false;
     onTapOutside(context);
   }
@@ -154,6 +210,7 @@ class HomeController extends GetxController {
     FocusScope.of(context).unfocus();
   }
   checkText() {
+    searchQuery.value = searchController.value.text;
     hasText.value = searchController.value.text.toString().isNotEmpty;
   }
   onTapField() {
@@ -169,6 +226,7 @@ class HomeController extends GetxController {
     name.value = spaceIndex >= 0 ? fullName.substring(0, spaceIndex) : fullName;
   }
   removeFromList(int index) {
+    NotificationService.cancelTaskReminder(list[index].key);
     db
         .removeFromList(TaskModel(
             key: list[index].key,
