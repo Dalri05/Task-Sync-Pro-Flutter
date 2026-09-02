@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../model/task_stats.dart';
 import '../../../res/app_color.dart';
 import '../../../utils/utils.dart';
 import '../../../view model/controller/home_controller.dart';
@@ -15,6 +16,7 @@ class ProgressContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final int progress = TaskStats.parseProgress(controller.list[index].progress);
     return Container(
       height: 200,
       width: 160,
@@ -74,33 +76,33 @@ class ProgressContainer extends StatelessWidget {
                         ),
                         itemBuilder: (context) {
                           return [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                                 value: 1,
                                 child: Row(
                                   children: [
-                                    Icon(
-                                      Icons.edit,
+                                    const Icon(
+                                      Icons.trending_up_rounded,
                                       color: Colors.pinkAccent,
                                     ),
                                     Text(
-                                      " Edit",
-                                      style: TextStyle(
+                                      " ${'home_update_progress'.tr}",
+                                      style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold),
                                     )
                                   ],
                                 )),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                                 value: 2,
                                 child: Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.delete_outline,
                                       color: Colors.pinkAccent,
                                     ),
                                     Text(
-                                      " Delete",
-                                      style: TextStyle(
+                                      " ${'home_delete'.tr}",
+                                      style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold),
                                     )
@@ -135,15 +137,15 @@ class ProgressContainer extends StatelessWidget {
                  Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Progress',
-                      style: TextStyle(
+                    Text(
+                      'home_progress'.tr,
+                      style: const TextStyle(
                           color: Colors.white70,
                           fontWeight: FontWeight.bold,
                           fontSize: 12),
                     ),
                     Text(
-                      '60%',
+                      '$progress%',
                       style: const TextStyle(
                           color: Colors.white70,
                           fontWeight: FontWeight.bold,
@@ -157,8 +159,7 @@ class ProgressContainer extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child:  LinearProgressIndicator(
-                    value: 0.6,
-                    // double.parse(controller.list[index].progress)/100.0
+                    value: progress / 100.0,
                     backgroundColor: Colors.deepPurple,
                     color: Colors.white,
                   ),
@@ -186,7 +187,10 @@ class ProgressContainer extends StatelessWidget {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20)),
                       child: Text(
-                        '${Utils.getDaysDiffirece(controller.list[index].date)} Days Left',
+                        'home_days_left'.trParams({
+                          'days': Utils.getDaysDiffirece(
+                              controller.list[index].date),
+                        }),
                         style: const TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.bold,

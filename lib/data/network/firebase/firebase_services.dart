@@ -18,11 +18,19 @@ class FirebaseService {
   static final signInController = Get.put(SignInController());
   static final signUpController = Get.put(SignupController());
 
+  /// Chave do nó a partir do email: parte antes do @, sem os caracteres
+  /// proibidos em paths do Realtime Database (. # $ [ ])
+  static String nodeFromEmail(String email) {
+    final at = email.indexOf('@');
+    final local = at >= 0 ? email.substring(0, at) : email;
+    return local.replaceAll(RegExp(r'[.#$\[\]]'), '_');
+  }
+
 
 
   static Future<void> insertData(TaskModel model)async{
      String str = auth.currentUser!.email.toString();
-     String node = str.substring(0, str.indexOf('@'));
+     String node = nodeFromEmail(str);
     database.ref('Tasks').child(node).child(model.key!).set({
       'key' : model.key,
       'title' : model.title,
@@ -43,7 +51,7 @@ class FirebaseService {
     try {
       signUpController.setLoading(true);
       final String str = signUpController.email.value.text.toString();
-      final String node = str.substring(0, str.indexOf('@'));
+      final String node = nodeFromEmail(str);
       database.ref('Accounts').child(node).set({
         'name': '${signUpController.name.value.text} ',
         'email': signUpController.email.value.text.toString(),
@@ -109,8 +117,7 @@ class FirebaseService {
         password: signInController.password.value.text.toString(),
       )
           .then((value) {
-        String node =
-            value.user!.email!.substring(0, value.user!.email!.indexOf('@'));
+        String node = nodeFromEmail(value.user!.email!);
         database.ref('Accounts').child(node).onValue.listen((event) {
           UserPref.setUser(
             event.snapshot.child('name').value.toString(),
@@ -175,7 +182,7 @@ class FirebaseService {
 
           await auth.signInWithCredential(credential).then((value) {
             final String str = value.user!.email.toString();
-            final String node = str.substring(0, str.indexOf('@'));
+            final String node = nodeFromEmail(str);
             database.ref('Accounts').child(node).set({
               'name' : value.user!.displayName,
               'email' : value.user!.email,
@@ -238,14 +245,14 @@ class FirebaseService {
   }
   static Future<int> childCount()async{
     String str = auth.currentUser!.email.toString();
-    String node = str.substring(0, str.indexOf('@'));
+    String node = nodeFromEmail(str);
     return database.ref('Tasks').child(node).once().then((value){
       return value.snapshot.children.length;
     });
   }
   static Future<void> update(String key,String updateKey,String updateValue) async{
     String str = auth.currentUser!.email.toString();
-    String node = str.substring(0, str.indexOf('@'));
+    String node = nodeFromEmail(str);
    database.ref('Tasks').child(node).child(key).update({
      updateKey : updateValue
    });
