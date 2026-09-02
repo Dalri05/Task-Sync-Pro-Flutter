@@ -1,0 +1,28 @@
+/// Traduções da home (header, busca, filtros, lista de tasks).
+const Map<String, String> homeEn = {
+  'home_hi': 'Hi,',
+  'home_progress': 'Progress',
+  'home_tasks': 'Tasks',
+  'home_no_tasks_found': 'No tasks found',
+  'home_task_item': 'Create @title for\n@category',
+  'home_search_hint': 'Search ...',
+  'home_priority': 'Priority',
+  'home_status': 'Status',
+  'home_update_progress': 'Update progress',
+  'home_delete': 'Delete',
+  'home_days_left': '@days Days Left',
+};
+
+const Map<String, String> homePt = {
+  'home_hi': 'Olá,',
+  'home_progress': 'Progresso',
+  'home_tasks': 'Tarefas',
+  'home_no_tasks_found': 'Nenhuma tarefa encontrada',
+  'home_task_item': 'Criar @title para\n@category',
+  'home_search_hint': 'Pesquisar ...',
+  'home_priority': 'Prioridade',
+  'home_status': 'Status',
+  'home_update_progress': 'Atualizar progresso',
+  'home_delete': 'Excluir',
+  'home_days_left': '@days dias restantes',
+};

@@ -27,15 +27,15 @@ class SignupController extends GetxController{
   }
   void createAccount(){
     if(!correctName.value){
-      Utils.showSnackBar('Warning', 'Enter Correct Name', const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pink,));
+      Utils.showSnackBar('sign_warning'.tr, 'sign_enter_correct_name'.tr, const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pink,));
       return;
     }
     if(!correctEmail.value){
-      Utils.showSnackBar('Warning', 'Enter Correct Email', const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pink,));
+      Utils.showSnackBar('sign_warning'.tr, 'sign_enter_correct_email'.tr, const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pink,));
       return;
     }
     if(password.value.text.toString().length<6){
-      Utils.showSnackBar('Warning', 'Password length should greater than 5', const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pink,));
+      Utils.showSnackBar('sign_warning'.tr, 'sign_password_length'.tr, const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pink,));
       return;
     }
     FirebaseService.createAccount();
