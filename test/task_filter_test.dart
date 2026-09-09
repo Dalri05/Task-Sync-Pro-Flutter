@@ -83,32 +83,54 @@ void main() {
 
   group('filtro por status', () {
     final tasks = [
-      makeTask(key: 'done', progress: '100'),
-      makeTask(key: 'clamped', progress: '150'),
-      makeTask(key: 'byStatus', progress: '0', status: 'complete'),
-      makeTask(key: 'half', progress: '50'),
-      makeTask(key: 'zero', progress: '0'),
-      makeTask(key: 'dirty', progress: 'null'),
+      makeTask(key: 'done', status: 'complete'),
+      makeTask(key: 'doing', status: 'inProgress'),
+      makeTask(key: 'todo', status: 'todo'),
+      // dados antigos: status legado + progresso como fallback
+      makeTask(key: 'legacyDone', status: 'unComplete', progress: '100'),
+      makeTask(key: 'legacyClamped', status: 'unComplete', progress: '150'),
+      makeTask(key: 'legacyHalf', status: 'unComplete', progress: '50'),
+      makeTask(key: 'legacyZero', status: 'unComplete', progress: '0'),
+      makeTask(key: 'dirty', status: 'null', progress: 'null'),
     ];
 
-    test("'Completed' pega progresso 100 (com clamp) e status 'complete'", () {
-      expect(keysOf(TaskFilter.apply(tasks, status: 'Completed')),
-          ['done', 'clamped', 'byStatus']);
+    test("'Done' pega status 'complete' e o legado com progresso 100", () {
+      expect(keysOf(TaskFilter.apply(tasks, status: 'Done')),
+          ['done', 'legacyDone', 'legacyClamped']);
     });
 
-    test("'Pending' é o complemento exato de 'Completed'", () {
-      expect(keysOf(TaskFilter.apply(tasks, status: 'Pending')),
-          ['half', 'zero', 'dirty']);
+    test("'InProgress' pega o status novo e o legado entre 1 e 99", () {
+      expect(keysOf(TaskFilter.apply(tasks, status: 'InProgress')),
+          ['doing', 'legacyHalf']);
+    });
+
+    test("'ToDo' pega o status novo, o legado em 0 e o dado sujo", () {
+      expect(keysOf(TaskFilter.apply(tasks, status: 'ToDo')),
+          ['todo', 'legacyZero', 'dirty']);
+    });
+
+    test('os tr\u00eas estados juntos cobrem a lista inteira', () {
+      final total = ['ToDo', 'InProgress', 'Done']
+          .map((s) => TaskFilter.apply(tasks, status: s).length)
+          .reduce((a, b) => a + b);
+      expect(total, tasks.length);
     });
 
     test("'All' mantém todas", () {
       expect(TaskFilter.apply(tasks, status: 'All').length, tasks.length);
     });
 
+    test('status desconhecido não filtra nada', () {
+      expect(TaskFilter.apply(tasks, status: 'Whatever').length, tasks.length);
+    });
+
     test('isCompleted ignora caixa e espaços no status', () {
       expect(TaskFilter.isCompleted(makeTask(status: ' Complete ')), isTrue);
-      expect(TaskFilter.isCompleted(makeTask(status: 'unComplete')), isFalse);
-      expect(TaskFilter.isCompleted(makeTask(status: null)), isFalse);
+      expect(
+          TaskFilter.isCompleted(makeTask(status: 'unComplete', progress: '0')),
+          isFalse);
+      expect(TaskFilter.isCompleted(makeTask(status: null, progress: '0')),
+          isFalse);
     });
   });
 
@@ -144,19 +166,23 @@ void main() {
   group('composição busca + filtros', () {
     test('todos os critérios se aplicam ao mesmo tempo', () {
       final tasks = [
-        makeTask(key: 'alvo', title: 'Report', periority: 'High', progress: '100'),
-        makeTask(key: '2', title: 'Report', periority: 'High', progress: '10'),
-        makeTask(key: '3', title: 'Report', periority: 'Low', progress: '100'),
-        makeTask(key: '4', title: 'Outra', periority: 'High', progress: '100'),
-        makeTask(key: '5', title: 'Report', periority: 'High', progress: '100',
-            show: 'no'),
+        makeTask(key: 'alvo', title: 'Report', periority: 'High',
+            status: 'complete'),
+        makeTask(key: '2', title: 'Report', periority: 'High',
+            status: 'inProgress'),
+        makeTask(key: '3', title: 'Report', periority: 'Low',
+            status: 'complete'),
+        makeTask(key: '4', title: 'Outra', periority: 'High',
+            status: 'complete'),
+        makeTask(key: '5', title: 'Report', periority: 'High',
+            status: 'complete', show: 'no'),
       ];
 
       final result = TaskFilter.apply(
         tasks,
         query: 'report',
         priority: 'High',
-        status: 'Completed',
+        status: 'Done',
       );
 
       expect(keysOf(result), ['alvo']);

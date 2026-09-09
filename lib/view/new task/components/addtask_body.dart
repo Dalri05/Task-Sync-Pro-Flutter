@@ -77,7 +77,7 @@ class TaskBody extends StatelessWidget {
             loading: controller.loading.value,
             onTap: () async {
               // controller.insertDataInDatabase();
-              controller.showProgressPicker(context);
+              controller.showStatusPicker(context);
             },
           ))
         ]),

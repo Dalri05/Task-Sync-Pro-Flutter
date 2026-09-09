@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:to_do_app/view%20model/controller/add_task_controller.dart';
+import 'package:to_do_app/view/common%20widgets/status_options.dart';
 
 import '../../../res/app_color.dart';
 
-class ProgressPicker {
-  ProgressPicker(BuildContext context) {
+/// Último passo da criação de task: escolher o status inicial e confirmar.
+class StatusPicker {
+  StatusPicker(BuildContext context) {
     final controller = Get.put(AddTaskController());
     showDialog(
       context: context,
@@ -16,7 +18,7 @@ class ProgressPicker {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Text(
-                'task_set_progress'.tr,
+                'task_set_status'.tr,
                 style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -25,33 +27,11 @@ class ProgressPicker {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Text(
-                    'task_progress'.tr,
-                    style: const TextStyle(
-                        color: Colors.white70, fontWeight: FontWeight.bold),
-                  ),
-                  const Spacer(),
-                  Obx(
-                    () => Text(
-                      '${controller.progress.value.toInt()}%',
-                      style: const TextStyle(
-                          color: Colors.white70, fontWeight: FontWeight.bold),
-                    ),
-                  )
-                ],
+              child: StatusOptions(
+                selected: controller.status,
+                onSelected: controller.setStatus,
               ),
             ),
-            Obx(() => Slider(
-                  min: 0.0,
-                  max: 100.0,
-                  activeColor: Colors.pinkAccent,
-                  value: controller.progress.value,
-                  onChanged: (value) {
-                    controller.progress.value = value;
-                  },
-                )),
             const SizedBox(
               height: 10,
             ),

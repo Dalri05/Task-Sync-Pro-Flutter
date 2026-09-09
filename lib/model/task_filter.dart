@@ -1,20 +1,16 @@
 import 'package:to_do_app/model/task_model.dart';
-import 'package:to_do_app/model/task_stats.dart';
+import 'package:to_do_app/model/task_status.dart';
 
 /// Filtro puro de tasks (sem banco, rede ou UI) para a home page.
-/// Combina busca por texto + prioridade + status de conclusão.
+/// Combina busca por texto + prioridade + status.
 class TaskFilter {
   static const List<String> priorities = ['All', 'High', 'Medium', 'Low'];
-  static const List<String> statuses = ['All', 'Pending', 'Completed'];
+  static const List<String> statuses = ['All', 'ToDo', 'InProgress', 'Done'];
 
-  /// Concluída = progresso 100 (fonte da verdade) ou status 'complete'
-  /// (gravado por updateProgress ao chegar em 100).
-  static bool isCompleted(TaskModel task) {
-    if (TaskStats.parseProgress(task.progress) >= kCompleteProgress) {
-      return true;
-    }
-    return (task.status ?? '').trim().toLowerCase() == 'complete';
-  }
+  /// Concluída = estado `done`. A leitura do estado (incluindo o fallback para
+  /// o progresso das tasks antigas) mora em TaskStatus.from.
+  static bool isCompleted(TaskModel task) =>
+      TaskStatus.from(task) == TaskStatus.done;
 
   /// Prioridade vazia/null/'null' cai em 'Low', consistente com TaskStats.
   static String effectivePriority(String? raw) {
@@ -31,6 +27,7 @@ class TaskFilter {
     String status = 'All',
   }) {
     final q = query.trim().toLowerCase();
+    final wanted = TaskStatus.fromFilterValue(status);
 
     bool matchesQuery(TaskModel task) {
       if (q.isEmpty) return true;
@@ -41,11 +38,8 @@ class TaskFilter {
     bool matchesPriority(TaskModel task) =>
         priority == 'All' || effectivePriority(task.periority) == priority;
 
-    bool matchesStatus(TaskModel task) {
-      if (status == 'Completed') return isCompleted(task);
-      if (status == 'Pending') return !isCompleted(task);
-      return true;
-    }
+    bool matchesStatus(TaskModel task) =>
+        wanted == null || TaskStatus.from(task) == wanted;
 
     return tasks
         .whereType<TaskModel>()

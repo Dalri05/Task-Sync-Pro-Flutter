@@ -1,4 +1,4 @@
-/// Traduções de criação de task, sheet de progresso e diálogos/toasts (Utils).
+/// Traduções de criação de task, sheet de status e diálogos/toasts (Utils).
 const Map<String, String> taskEn = {
   'task_style': 'Style',
   'task_title': 'Title',
@@ -14,9 +14,9 @@ const Map<String, String> taskEn = {
   'task_date_placeholder': 'dd/mm/yyyy',
   'task_time_placeholder': 'hh/mm',
   'task_create_task': 'Create Task',
-  'task_set_progress': 'Set Progress',
-  'task_update_progress': 'Update Progress',
-  'task_progress': 'Progress',
+  'task_set_status': 'Set Status',
+  'task_update_status': 'Update Status',
+  'task_status': 'Status',
   'task_create': 'Create',
   'task_cancel': 'Cancel',
   'task_save': 'Save',
@@ -45,9 +45,9 @@ const Map<String, String> taskPt = {
   'task_date_placeholder': 'dd/mm/aaaa',
   'task_time_placeholder': 'hh/mm',
   'task_create_task': 'Criar tarefa',
-  'task_set_progress': 'Definir progresso',
-  'task_update_progress': 'Atualizar progresso',
-  'task_progress': 'Progresso',
+  'task_set_status': 'Definir status',
+  'task_update_status': 'Atualizar status',
+  'task_status': 'Status',
   'task_create': 'Criar',
   'task_cancel': 'Cancelar',
   'task_save': 'Salvar',

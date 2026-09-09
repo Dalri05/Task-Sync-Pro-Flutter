@@ -100,7 +100,7 @@ class HomePage extends StatelessWidget {
                 child: Obx(() => controller.hasData.value? RichText(
                         text: TextSpan(children: [
                       TextSpan(
-                        text: '${'home_progress'.tr}  ',
+                        text: '${'home_your_tasks'.tr}  ',
                         style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,

@@ -1,7 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:to_do_app/model/task_model.dart';
+import 'package:to_do_app/model/task_status.dart';
 
-/// Conclusão de uma task é derivada do progresso: 100% = concluída.
+/// Teto do campo legado `progress`, ainda gravado (derivado do status) para
+/// compatibilidade com bases antigas.
 const int kCompleteProgress = 100;
 
 /// Recorte de estatísticas de um grupo de tasks (uma categoria, uma prioridade).
@@ -65,15 +67,16 @@ class TaskStats {
     final priorityDone = <String, int>{};
 
     for (final task in visible) {
-      final progress = parseProgress(task.progress);
-      final isComplete = progress >= kCompleteProgress;
+      final status = TaskStatus.from(task);
+      final isComplete = status == TaskStatus.done;
 
-      if (isComplete) {
-        completed++;
-      } else if (progress > 0) {
-        inProgress++;
-      } else {
-        notStarted++;
+      switch (status) {
+        case TaskStatus.done:
+          completed++;
+        case TaskStatus.inProgress:
+          inProgress++;
+        case TaskStatus.todo:
+          notStarted++;
       }
 
       final due = parseDate(task.date);
@@ -122,8 +125,9 @@ class TaskStats {
     );
   }
 
-  /// O campo vem do banco como texto e pode trazer '' ou a string literal 'null'
-  /// (o sync do Firebase faz toString() em valor nulo). Fora da faixa, faz clamp.
+  /// Lê o campo legado `progress`. Vem do banco como texto e pode trazer '' ou
+  /// a string literal 'null' (o sync do Firebase faz toString() em valor nulo).
+  /// Fora da faixa, faz clamp. Só é usado como fallback em TaskStatus.from.
   static int parseProgress(String? raw) {
     final value = int.tryParse((raw ?? '').trim());
     if (value == null) return 0;

@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:to_do_app/model/task_status.dart';
+import 'package:to_do_app/view/common%20widgets/status_options.dart';
 
 import '../../../res/app_color.dart';
 
-class ProgressUpdateSheet extends StatelessWidget {
-  final int initialProgress;
-  final ValueChanged<int> onSave;
+/// Bottom sheet de alteração de status de uma task já criada.
+class StatusUpdateSheet extends StatelessWidget {
+  final ValueChanged<TaskStatus> onSave;
 
-  ProgressUpdateSheet(
-      {super.key, required this.initialProgress, required this.onSave})
-      : progress = initialProgress.toDouble().obs;
+  StatusUpdateSheet(
+      {super.key, required TaskStatus initialStatus, required this.onSave})
+      : status = initialStatus.obs;
 
-  final RxDouble progress;
+  final Rx<TaskStatus> status;
 
   static void show(
-      {required int initialProgress, required ValueChanged<int> onSave}) {
+      {required TaskStatus initialStatus,
+      required ValueChanged<TaskStatus> onSave}) {
     Get.bottomSheet(
-      ProgressUpdateSheet(initialProgress: initialProgress, onSave: onSave),
+      StatusUpdateSheet(initialStatus: initialStatus, onSave: onSave),
       backgroundColor: black,
       isScrollControlled: true,
     );
@@ -46,48 +49,24 @@ class ProgressUpdateSheet extends StatelessWidget {
             height: 20,
           ),
           Text(
-            'task_update_progress'.tr,
+            'task_update_status'.tr,
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
           ),
           const SizedBox(
             height: 20,
           ),
-          Row(
-            children: [
-              Text(
-                'task_progress'.tr,
-                style: const TextStyle(
-                    color: Colors.white70, fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              Obx(
-                () => Text(
-                  '${progress.value.toInt()}%',
-                  style: const TextStyle(
-                      color: Colors.white70, fontWeight: FontWeight.bold),
-                ),
-              )
-            ],
+          StatusOptions(
+            selected: status,
+            onSelected: (value) => status.value = value,
           ),
-          Obx(() => Slider(
-                min: 0.0,
-                max: 100.0,
-                divisions: 100,
-                activeColor: Colors.pinkAccent,
-                inactiveColor: Colors.white24,
-                value: progress.value,
-                onChanged: (value) {
-                  progress.value = value;
-                },
-              )),
           const SizedBox(
             height: 10,
           ),
           GestureDetector(
             onTap: () {
               Get.back();
-              onSave(progress.value.toInt());
+              onSave(status.value);
             },
             child: Container(
               height: 55,

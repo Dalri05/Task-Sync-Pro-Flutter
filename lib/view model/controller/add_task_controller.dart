@@ -5,10 +5,11 @@ import 'package:intl/intl.dart';
 import 'package:to_do_app/data/notifications/notification_service.dart';
 import 'package:to_do_app/model/task_model.dart';
 import 'package:to_do_app/model/task_stats.dart';
+import 'package:to_do_app/model/task_status.dart';
 import 'package:to_do_app/utils/utils.dart';
 import 'package:to_do_app/view%20model/DbHelper/db_helper.dart';
 import 'package:to_do_app/view%20model/controller/home_controller.dart';
-import 'package:to_do_app/view/new%20task/components/progress_picker.dart';
+import 'package:to_do_app/view/new%20task/components/status_picker.dart';
 
 class AddTaskController extends GetxController{
   final DbHelper database=DbHelper();
@@ -19,7 +20,7 @@ class AddTaskController extends GetxController{
   RxBool categoryFocus=false.obs;
   RxBool descriptionFocus=false.obs;
   RxBool loading=false.obs;
-  RxDouble progress=0.0.obs;
+  Rx<TaskStatus> status=TaskStatus.todo.obs;
   Rx<TextEditingController> title=TextEditingController().obs;
   Rx<TextEditingController> description=TextEditingController().obs;
   Rx<TextEditingController> category=TextEditingController().obs;
@@ -32,8 +33,8 @@ class AddTaskController extends GetxController{
     try{
       loading.value=true;
      final task=TaskModel(
-       progress: progress.value.toInt().toString(),
-          status: 'unComplete',
+       progress: status.value.progressText,
+          status: status.value.storageValue,
           key: DateTime.now().microsecondsSinceEpoch.toString(),
           time: time.value,
           date: date.value,
@@ -51,7 +52,7 @@ class AddTaskController extends GetxController{
        category.value.clear();
        date.value='';
        time.value='';
-       progress.value=0.0;
+       status.value=TaskStatus.todo;
        selectedImageIndex.value=1;
             await Future.delayed(const Duration(milliseconds: 700));
        loading.value=false;
@@ -66,7 +67,7 @@ class AddTaskController extends GetxController{
       Utils.showSnackBar('task_warning'.tr, e.toString(), const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pinkAccent,));
     }
   }
-  showProgressPicker(BuildContext context){
+  showStatusPicker(BuildContext context){
     if(title.value.text.toString().isEmpty){
       Utils.showSnackBar('task_warning'.tr, 'task_add_title'.tr, const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pinkAccent,));
       return;
@@ -83,7 +84,7 @@ class AddTaskController extends GetxController{
       Utils.showSnackBar('task_warning'.tr, 'task_select_correct_date'.tr, const Icon(FontAwesomeIcons.triangleExclamation,color: Colors.pinkAccent,));
       return;
     }
-    ProgressPicker(context);
+    StatusPicker(context);
   }
   pickDate(BuildContext context)async{
     // A faixa acompanha o ano corrente: fixá-la em datas absolutas fez o picker
@@ -131,6 +132,9 @@ class AddTaskController extends GetxController{
   }
   setPeriority(String value){
     periority.value=value;
+  }
+  setStatus(TaskStatus value){
+    status.value=value;
   }
   setImage(int index){
     selectedImageIndex.value=index;
