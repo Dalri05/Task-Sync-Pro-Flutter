@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:to_do_app/data/shared%20pref/shared_pref.dart';
+import 'package:to_do_app/data/sync/task_sync.dart';
 import 'package:to_do_app/model/task_model.dart';
 import 'package:to_do_app/utils/utils.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -25,26 +26,24 @@ class FirebaseService {
     return local.replaceAll(RegExp(r'[.#$\[\]]'), '_');
   }
 
-  static Future<void> insertData(TaskModel model) async {
+  /// Grava a task inteira no Firebase. Completa só quando o servidor
+  /// confirmou e propaga o erro — quem chama decide se tira da fila.
+  static Future<void> insertData(TaskModel model) {
     String str = auth.currentUser!.email.toString();
     String node = nodeFromEmail(str);
-    database
-        .ref('Tasks')
-        .child(node)
-        .child(model.key!)
-        .set({
-          'key': model.key,
-          'title': model.title,
-          'description': model.description,
-          'category': model.category,
-          'date': model.date,
-          'time': model.time,
-          'image': model.image,
-          'periority': model.periority,
-          'show': model.show,
-        })
-        .then((value) {})
-        .onError((error, stackTrace) {});
+    return database.ref('Tasks').child(node).child(model.key!).set({
+      'key': model.key,
+      'title': model.title,
+      'description': model.description,
+      'category': model.category,
+      'date': model.date,
+      'time': model.time,
+      'image': model.image,
+      'periority': model.periority,
+      'show': model.show,
+      'status': model.status,
+      'progress': model.progress,
+    });
   }
 
   static Future<void> createAccount() async {
@@ -251,14 +250,21 @@ class FirebaseService {
     });
   }
 
-  static Future<void> update(
-      String key, String updateKey, String updateValue) async {
+  static Future<void> update(String key, String updateKey, String updateValue) {
     String str = auth.currentUser!.email.toString();
     String node = nodeFromEmail(str);
-    database
+    return database
         .ref('Tasks')
         .child(node)
         .child(key)
         .update({updateKey: updateValue});
   }
+}
+
+class FirebaseTaskRemote implements TaskRemote {
+  @override
+  Future<void> push(TaskModel task) => FirebaseService.insertData(task);
+
+  @override
+  Future<void> hide(String key) => FirebaseService.update(key, 'show', 'no');
 }

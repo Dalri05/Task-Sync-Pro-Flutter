@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:to_do_app/data/network/firebase/firebase_services.dart';
 import 'package:to_do_app/data/notifications/notification_service.dart';
+import 'package:to_do_app/data/sync/task_sync.dart';
 import 'package:to_do_app/data/shared%20pref/shared_pref.dart';
 import 'package:to_do_app/utils/utils.dart';
 import 'package:to_do_app/view%20model/DbHelper/db_helper.dart';
@@ -20,6 +21,7 @@ class HomeController extends GetxController {
   RxInt taskCount = 0.obs;
   RxBool hasData = false.obs;
   final DbHelper db = DbHelper();
+  late final TaskSync sync = TaskSync(db, FirebaseTaskRemote());
   RxList list = [].obs;
   Connectivity? connectivity;
   final searchController = TextEditingController().obs;
@@ -37,88 +39,64 @@ class HomeController extends GetxController {
     if (connectivity == null) {
       String str = FirebaseService.auth.currentUser!.email.toString();
       String node = FirebaseService.nodeFromEmail(str);
-      // listener for changing live database
+      // listener for changing live database: traz o que ainda não existe local
       FirebaseDatabase.instance
           .ref('Tasks')
           .child(node)
           .onValue
           .listen((event) async {
-        // check if live database has more child than local
-
-        getTaskData();
         for (var element in event.snapshot.children) {
-          if (!await db.isRowExists(
-              element.child('key').value.toString(), 'Tasks')) {
-            db
-                .insert(
-              TaskModel(
-                  key: element.child('key').value.toString(),
-                  time: element.child('time').value.toString(),
-                  progress: element.child('progress').value.toString(),
-                  status: element.child('status').value.toString(),
-                  date: element.child('date').value.toString(),
-                  periority: element.child('periority').value.toString(),
-                  description: element.child('description').value.toString(),
-                  category: element.child('category').value.toString(),
-                  title: element.child('title').value.toString(),
-                  image: element.child('image').value.toString(),
-                  show: element.child('show').value.toString()),
-            )
-                .then((value) {
-              getTaskData();
-            });
+          final task = _taskFromSnapshot(element);
+          if (!await db.isRowExists(task.key!, 'Tasks')) {
+            await db.saveFromRemote(task);
           }
         }
+        getTaskData();
       });
 
+      // o snapshot do evento é a própria task alterada (não a lista)
       FirebaseDatabase.instance
           .ref('Tasks')
           .child(node)
           .onChildChanged
           .listen((event) async {
-        // check if live database has more child than local
+        await db.saveFromRemote(_taskFromSnapshot(event.snapshot));
         getTaskData();
-        for (var element in event.snapshot.children) {
-          db
-              .update(TaskModel(
-                  progress: element.child('progress').value.toString(),
-                  status: element.child('status').value.toString(),
-                  key: element.child('key').value.toString(),
-                  time: element.child('time').value.toString(),
-                  date: element.child('date').value.toString(),
-                  periority: element.child('periority').value.toString(),
-                  description: element.child('description').value.toString(),
-                  category: element.child('category').value.toString(),
-                  title: element.child('title').value.toString(),
-                  image: element.child('image').value.toString(),
-                  show: element.child('show').value.toString()))
-              .then((value) {
-            getTaskData();
-          });
-        }
       });
       connectivity = Connectivity();
       // listener for internet state
-      connectivity!.onConnectivityChanged.listen((event) async {
+      connectivity!.onConnectivityChanged.listen((event) {
         if (event == ConnectivityResult.mobile ||
             event == ConnectivityResult.wifi) {
-          var list = await db.getPendingUploads();
-          for (int i = 0; i < list.length; i++) {
-            db.insert(list[i]);
-            db.delete(list[i].key!, 'PendingUploads');
-          }
-          list.clear();
-          list = await db.getPendingDeletes();
-          for (int i = 0; i < list.length; i++) {
-            FirebaseService.update(list[i].key!, 'show', 'no');
-            db.delete(list[i].key!, 'PendingDeletes');
-          }
-          getTaskData();
+          syncPending();
         }
       });
+      // o que ficou pendente de uma sessão anterior sobe já na abertura
+      syncPending();
     }
     getTaskData();
   }
+
+  static TaskModel _taskFromSnapshot(DataSnapshot snapshot) {
+    String? field(String name) => snapshot.child(name).value?.toString();
+    return TaskModel(
+        key: field('key') ?? snapshot.key,
+        time: field('time'),
+        progress: field('progress'),
+        status: field('status'),
+        date: field('date'),
+        periority: field('periority'),
+        description: field('description'),
+        category: field('category'),
+        title: field('title'),
+        image: field('image'),
+        show: field('show'));
+  }
+
+  /// Envia a fila local (criações, mudanças de status e remoções feitas
+  /// offline). Itens só saem da fila depois que o Firebase confirmou.
+  Future<bool> syncPending() => sync.run();
+
   checkData() {
     int count = 0;
     for (int i = 0; i < list.length; i++) {
@@ -165,22 +143,14 @@ class HomeController extends GetxController {
         title: task.title,
         image: task.image,
         show: task.show));
-    // offline first: local sempre grava, o Firebase só quando há conexão
-    var connection = await Connectivity().checkConnectivity();
-    if (connection == ConnectivityResult.wifi ||
-        connection == ConnectivityResult.mobile) {
-      await FirebaseService.update(task.key!, 'progress', status.progressText);
-      await FirebaseService.update(task.key!, 'status', status.storageValue);
-    }
+    // offline first: grava local + fila; o Firebase recebe quando der
     getTaskData();
+    syncPending();
   }
 
   getTaskData() async {
+    // pendentes também já estão em Tasks: a fila não entra na lista
     list.value = await db.getData();
-    var tempList = await db.getPendingUploads();
-    for (int i = 0; i < tempList.length; i++) {
-      list.add(tempList[i]);
-    }
     checkData();
   }
 
@@ -253,6 +223,7 @@ class HomeController extends GetxController {
             show: 'no'))
         .then((value) {
       getTaskData();
+      syncPending();
     });
   }
 }
