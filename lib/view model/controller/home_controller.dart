@@ -43,7 +43,6 @@ class HomeController extends GetxController {
           .child(node)
           .onValue
           .listen((event) async {
-        int count = await FirebaseService.childCount();
         // check if live database has more child than local
 
         getTaskData();
@@ -77,15 +76,13 @@ class HomeController extends GetxController {
           .child(node)
           .onChildChanged
           .listen((event) async {
-        int count = await FirebaseService.childCount();
-
         // check if live database has more child than local
         getTaskData();
         for (var element in event.snapshot.children) {
           db
               .update(TaskModel(
-              progress: element.child('progress').value.toString(),
-              status: element.child('status').value.toString(),
+                  progress: element.child('progress').value.toString(),
+                  status: element.child('status').value.toString(),
                   key: element.child('key').value.toString(),
                   time: element.child('time').value.toString(),
                   date: element.child('date').value.toString(),
@@ -137,6 +134,7 @@ class HomeController extends GetxController {
       taskCount.value = 0;
     }
   }
+
   popupMenuSelected(int value, int index, BuildContext context) async {
     if (value == 1) {
       showStatusSheet(index);
@@ -144,11 +142,13 @@ class HomeController extends GetxController {
       Utils.showWarningDailog(context, () => removeFromList(index));
     }
   }
+
   showStatusSheet(int index) {
     StatusUpdateSheet.show(
         initialStatus: TaskStatus.from(list[index]),
         onSave: (status) => updateStatus(index, status));
   }
+
   /// `status` é a fonte da verdade; `progress` continua sendo gravado derivado
   /// (0/50/100) para bases antigas que ainda leem o campo numérico.
   updateStatus(int index, TaskStatus status) async {
@@ -174,6 +174,7 @@ class HomeController extends GetxController {
     }
     getTaskData();
   }
+
   getTaskData() async {
     list.value = await db.getData();
     var tempList = await db.getPendingUploads();
@@ -182,9 +183,11 @@ class HomeController extends GetxController {
     }
     checkData();
   }
+
   Future<List<TaskModel>> getFututeData() {
     return db.getData();
   }
+
   /// Lista que a UI consome: busca + prioridade + status sobre `list`.
   /// Lida dentro de Obx, reage a list/searchQuery/priorityFilter/statusFilter.
   List<TaskModel> get filteredTasks => TaskFilter.apply(
@@ -196,35 +199,43 @@ class HomeController extends GetxController {
   setPriorityFilter(String value) {
     priorityFilter.value = value;
   }
+
   setStatusFilter(String value) {
     statusFilter.value = value;
   }
+
   onClear(BuildContext context) {
     searchController.value.text = '';
     searchQuery.value = '';
     hasText.value = false;
     onTapOutside(context);
   }
+
   onTapOutside(BuildContext context) {
     focus.value = false;
     FocusScope.of(context).unfocus();
   }
+
   checkText() {
     searchQuery.value = searchController.value.text;
     hasText.value = searchController.value.text.toString().isNotEmpty;
   }
+
   onTapField() {
     focus.value = true;
   }
+
   getUserData() async {
     userData.value = await UserPref.getUser();
     getName();
   }
+
   getName() {
     final fullName = userData['NAME'].toString().trim();
     final spaceIndex = fullName.indexOf(' ');
     name.value = spaceIndex >= 0 ? fullName.substring(0, spaceIndex) : fullName;
   }
+
   removeFromList(int index) {
     NotificationService.cancelTaskReminder(list[index].key);
     db
