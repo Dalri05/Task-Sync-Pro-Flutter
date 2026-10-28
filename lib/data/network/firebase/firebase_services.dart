@@ -3,14 +3,13 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:to_do_app/Data/shared%20pref/shared_pref.dart';
+import 'package:to_do_app/data/shared%20pref/shared_pref.dart';
 import 'package:to_do_app/model/task_model.dart';
 import 'package:to_do_app/utils/utils.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:to_do_app/view%20model/controller/signin_controller.dart';
 import 'package:to_do_app/view/home%20page/home_page.dart';
 import '../../../view model/controller/signup_controller.dart';
-
 
 class FirebaseService {
   static final FirebaseAuth auth = FirebaseAuth.instance;
@@ -26,27 +25,28 @@ class FirebaseService {
     return local.replaceAll(RegExp(r'[.#$\[\]]'), '_');
   }
 
-
-
-  static Future<void> insertData(TaskModel model)async{
-     String str = auth.currentUser!.email.toString();
-     String node = nodeFromEmail(str);
-    database.ref('Tasks').child(node).child(model.key!).set({
-      'key' : model.key,
-      'title' : model.title,
-      'description' : model.description,
-      'category' : model.category,
-      'date' : model.date,
-      'time' : model.time,
-      'image' : model.image,
-      'periority' : model.periority,
-      'show' : model.show,
-    }).then((value) {
-
-    }).onError((error, stackTrace){
-
-    });
+  static Future<void> insertData(TaskModel model) async {
+    String str = auth.currentUser!.email.toString();
+    String node = nodeFromEmail(str);
+    database
+        .ref('Tasks')
+        .child(node)
+        .child(model.key!)
+        .set({
+          'key': model.key,
+          'title': model.title,
+          'description': model.description,
+          'category': model.category,
+          'date': model.date,
+          'time': model.time,
+          'image': model.image,
+          'periority': model.periority,
+          'show': model.show,
+        })
+        .then((value) {})
+        .onError((error, stackTrace) {});
   }
+
   static Future<void> createAccount() async {
     try {
       signUpController.setLoading(true);
@@ -108,6 +108,7 @@ class FirebaseService {
       signUpController.setLoading(true);
     }
   }
+
   static Future<void> loginAccount() async {
     try {
       signInController.setLoading(true);
@@ -166,14 +167,17 @@ class FirebaseService {
       signInController.setLoading(true);
     }
   }
-  static Future<void> signInwWithGoogle()async{
-    try{
+
+  static Future<void> signInwWithGoogle() async {
+    try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
-      googleSignIn.signIn().then((GoogleSignInAccount? googleSignInAccount) async {
+      googleSignIn
+          .signIn()
+          .then((GoogleSignInAccount? googleSignInAccount) async {
         if (googleSignInAccount != null) {
           // Get the GoogleSignInAuthentication object
           final GoogleSignInAuthentication googleSignInAuthentication =
-          await googleSignInAccount.authentication;
+              await googleSignInAccount.authentication;
           // Create an AuthCredential object
           final AuthCredential credential = GoogleAuthProvider.credential(
             idToken: googleSignInAuthentication.idToken,
@@ -184,8 +188,8 @@ class FirebaseService {
             final String str = value.user!.email.toString();
             final String node = nodeFromEmail(str);
             database.ref('Accounts').child(node).set({
-              'name' : value.user!.displayName,
-              'email' : value.user!.email,
+              'name': value.user!.displayName,
+              'email': value.user!.email,
             }).then((val) {
               Utils.showSnackBar(
                   'Login',
@@ -194,12 +198,8 @@ class FirebaseService {
                     FontAwesomeIcons.triangleExclamation,
                     color: Colors.red,
                   ));
-              UserPref.setUser(
-                  value.user!.displayName!,
-                  value.user!.email!,
-                  "NOPASSWORD",
-                  node,
-                  value.user!.uid);
+              UserPref.setUser(value.user!.displayName!, value.user!.email!,
+                  "NOPASSWORD", node, value.user!.uid);
             }).onError((error, stackTrace) {
               Utils.showSnackBar(
                   'Error',
@@ -231,7 +231,7 @@ class FirebaseService {
             ));
         return;
       });
-    }catch(e){
+    } catch (e) {
       Utils.showSnackBar(
           'Error',
           Utils.extractFirebaseError(e.toString()),
@@ -241,22 +241,24 @@ class FirebaseService {
           ));
     }
   }
-  static Future<void> signInWithApple()async{
-  }
-  static Future<int> childCount()async{
+
+  static Future<void> signInWithApple() async {}
+  static Future<int> childCount() async {
     String str = auth.currentUser!.email.toString();
     String node = nodeFromEmail(str);
-    return database.ref('Tasks').child(node).once().then((value){
+    return database.ref('Tasks').child(node).once().then((value) {
       return value.snapshot.children.length;
     });
   }
-  static Future<void> update(String key,String updateKey,String updateValue) async{
+
+  static Future<void> update(
+      String key, String updateKey, String updateValue) async {
     String str = auth.currentUser!.email.toString();
     String node = nodeFromEmail(str);
-   database.ref('Tasks').child(node).child(key).update({
-     updateKey : updateValue
-   });
+    database
+        .ref('Tasks')
+        .child(node)
+        .child(key)
+        .update({updateKey: updateValue});
   }
-
-
 }
